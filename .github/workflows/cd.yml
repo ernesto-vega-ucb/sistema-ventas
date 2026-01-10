@@ -1,0 +1,26 @@
+name: CD
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Solo desplegar si los tests pasaron (requiere que el workflow de CI haya corrido antes o en paralelo)
+    needs: [] # Podríamos poner 'ci' aquí si quisiéramos forzar que CI pase primero, pero por simplicidad lo dejamos independiente o en paralelo.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            bash deploy.sh

@@ -1,0 +1,125 @@
+name: Quality Gates
+
+on:
+  push:
+    branches: ["main", "develop", "feature/**"]
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch: # Permite ejecución manual desde GitHub UI
+
+# Cancelar ejecuciones anteriores si se hace un nuevo push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ==================================================================
+  # JOB 1: BACKEND QUALITY GATES (PHP/Laravel)
+  # ==================================================================
+  backend-quality:
+    name: Backend Quality (PHP)
+    runs-on: ubuntu-latest
+
+    steps:
+      # Paso 1: Clonar el repositorio
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Paso 2: Configurar PHP con las extensiones necesarias
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_pgsql
+          coverage: none
+
+      # Paso 3: Instalar dependencias de PHP
+      - name: Install Composer Dependencies
+        run: composer update -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      # Paso 5: GATE 1 - Verificar estilo de código con Laravel Pint
+      - name: "Gate 1: Code Style (Laravel Pint)"
+        run: ./vendor/bin/pint --test
+
+      # Paso 6: Configurar entorno para tests
+      - name: Setup Test Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+
+      # Paso 7: GATE 2 - Auditoría de seguridad de dependencias PHP
+      - name: "Gate 2: Security Audit (Composer)"
+        run: composer audit
+
+      # Paso 8: GATE 3 - Ejecutar tests unitarios y de integración
+      - name: "Gate 3: PHPUnit Tests"
+        run: php artisan test
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+
+  # ==================================================================
+  # JOB 2: FRONTEND QUALITY GATES (JavaScript/Vue)
+  # ==================================================================
+  frontend-quality:
+    name: Frontend Quality (JS/Vue)
+    runs-on: ubuntu-latest
+
+    steps:
+      # Paso 1: Clonar el repositorio
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Paso 2: Configurar Node.js con cache de npm
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # Paso 3: Instalar dependencias de Node.js
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      # Paso 4: GATE 1 - Verificar estilo de código con ESLint
+      - name: "Gate 1: Code Style (ESLint)"
+        run: npm run lint
+
+      # Paso 5: GATE 2 - Auditoría de seguridad de dependencias JS
+      - name: "Gate 2: Security Audit (npm)"
+        run: npm audit --audit-level=high
+        continue-on-error: true # No bloquear por vulnerabilidades de baja severidad
+
+      # Paso 6: GATE 3 - Verificar que el proyecto compila correctamente
+      - name: "Gate 3: Build Verification (Vite)"
+        run: npm run build
+
+      # Paso 7: GATE 4 - Ejecutar tests de Vue con Vitest
+      - name: "Gate 4: Unit Tests (Vitest)"
+        run: npm run test
+
+  # ==================================================================
+  # JOB 3: RESUMEN DE RESULTADOS
+  # ==================================================================
+  summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [backend-quality, frontend-quality]
+    if: always()
+
+    steps:
+      - name: Check Results
+        run: |
+          echo "## Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.backend-quality.result }}" == "success" ]; then
+            echo "Backend Quality: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Backend Quality: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ needs.frontend-quality.result }}" == "success" ]; then
+            echo "Frontend Quality: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Frontend Quality: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi

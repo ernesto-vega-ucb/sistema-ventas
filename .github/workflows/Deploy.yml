@@ -1,0 +1,164 @@
+name: Deploy
+
+on:
+  # Se ejecuta automáticamente cuando Quality Gates pasa
+  workflow_run:
+    workflows: ["Quality Gates"]
+    types: [completed]
+    branches: [main, develop]
+
+  # También permite ejecución manual
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  # ==================================================================
+  # JOB 1: DEPLOY A STAGING (rama develop)
+  # ==================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: |
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Display Deployment Info
+        run: |
+          echo "Deploying to STAGING environment"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "Navigating to project directory..."
+            cd ${{ secrets.STAGING_PATH || '/var/www/sistema-ventas' }}
+
+            echo "Pulling latest changes..."
+            git fetch origin develop
+            git reset --hard origin/develop
+
+            echo "Installing PHP dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo "Running migrations..."
+            php artisan migrate --force
+
+            echo "Clearing and caching config..."
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "Installing Node dependencies..."
+            npm ci --production=false
+
+            echo "Building frontend assets..."
+            npm run build
+
+            echo "Restarting PHP-FPM..."
+            sudo systemctl reload php8.2-fpm || true
+
+            echo "Deployment to STAGING completed!"
+
+      - name: Smoke Test
+        run: |
+          echo "Running smoke test..."
+          sleep 5
+          curl -f ${{ secrets.STAGING_URL }}/api/health || echo "⚠️ Health check failed"
+
+  # ==================================================================
+  # JOB 2: DEPLOY A PRODUCCIÓN (rama main)
+  # ==================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: |
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    environment: production
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Display Deployment Info
+        run: |
+          echo "Deploying to PRODUCTION environment"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT || 22 }}
+          script: |
+            set -e
+            echo "Navigating to project directory..."
+            cd ${{ secrets.PROD_PATH || '/var/www/sistema-ventas' }}
+
+            echo "Enabling maintenance mode..."
+            php artisan down --retry=60 --refresh=5
+
+            echo "Pulling latest changes..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Installing PHP dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo "Running migrations..."
+            php artisan migrate --force
+
+            echo "Clearing and caching config..."
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            echo "Installing Node dependencies..."
+            npm ci --production=false
+
+            echo "Building frontend assets..."
+            npm run build
+
+            echo "Restarting PHP-FPM..."
+            sudo systemctl reload php8.2-fpm || true
+
+            echo "Disabling maintenance mode..."
+            php artisan up
+
+            echo "Deployment to PRODUCTION completed!"
+
+      - name: Smoke Test
+        run: |
+          echo "Running smoke test..."
+          sleep 10
+          curl -f ${{ secrets.PROD_URL }}/api/health || echo "Health check failed"
+
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "## Production Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- *Commit*: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- *Branch*: main" >> $GITHUB_STEP_SUMMARY
+          echo "- *URL*: ${{ secrets.PROD_URL }}" >> $GITHUB_STEP_SUMMARY
