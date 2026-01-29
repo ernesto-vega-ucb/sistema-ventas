@@ -8,10 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * Modelo Rol
- *
- * Representa un rol del sistema que agrupa permisos.
- * Los usuarios pueden tener múltiples roles.
+ * @property int $id
+ * @property string $nombre
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Permiso[] $permisos
  */
 class Rol extends Model
 {
