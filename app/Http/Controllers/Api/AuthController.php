@@ -45,9 +45,13 @@ class AuthController extends Controller
 
             $roles = $user->roles()->pluck('nombre');
             $permisos = $user->roles->flatMap(function ($rol) {
-                /** @var \App\Models\Rol $rol */
-                return $rol->permisos;
-            })->pluck('slug')->unique()->values();
+                // Si $rol es un Model genérico para PHPStan, accedemos a la relación vía método
+                if ($rol instanceof \App\Models\Rol) {
+                    return $rol->permisos->pluck('slug');
+                }
+
+                return collect();
+            })->unique()->values();
 
             return response()->json([
                 'success' => true,

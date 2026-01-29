@@ -38,6 +38,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property-read Proveedor|null $proveedor Relación con proveedor
  *
  * @method static Builder activas() Scope para filtrar personas activas
+ * @method static \App\Models\Persona create(array $attributes = [])
+ * @method static \App\Models\Persona|null find(mixed $id)
+ * @method static \Illuminate\Database\Eloquent\Builder|Persona query()
+ * @method static \Illuminate\Database\Eloquent\Builder|Persona activas()
+ * @method static \Illuminate\Database\Eloquent\Builder|Persona porTipoDocumento(string $tipo)
+ * @method static \Illuminate\Database\Eloquent\Builder|Persona porNumeroDocumento(string $numero)
  */
 class Persona extends Model
 {
