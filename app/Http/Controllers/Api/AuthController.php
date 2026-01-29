@@ -1,19 +1,22 @@
+
 <?php
 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\AuditLogger;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
     /**
      * Iniciar sesión
      */
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -28,11 +31,13 @@ class AuthController extends Controller
             ], 422);
         }
 
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::attempt($credentials)) {
+            /** @var User $user */
             $user = Auth::user();
 
-            // Verificar si el usuario está activo
-            if (! $user->estado) {
+            if (!$user->estado) {
                 Auth::logout();
 
                 return response()->json([
@@ -41,17 +46,14 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // Crear token
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Log de Login exitoso
             AuditLogger::login("Usuario {$user->email} inició sesión exitosamente.");
 
-            // Obtener roles y permisos para el frontend
             $roles = $user->roles->pluck('nombre');
             $permisos = $user->roles->flatMap(function ($rol) {
                 return $rol->permisos;
-            })->pluck('slug')->unique();
+            })->pluck('slug')->unique()->values();
 
             return response()->json([
                 'success' => true,
@@ -69,8 +71,8 @@ class AuthController extends Controller
             ]);
         }
 
-        // Log de Intento fallido
-        AuditLogger::log('LOGIN_FALLIDO', 'warning', "Intento de login fallido para email: {$request->email}");
+        $email = $request->input('email');
+        AuditLogger::log('LOGIN_FALLIDO', 'warning', "Intento de login fallido para email: {$email}");
 
         return response()->json([
             'success' => false,
@@ -81,11 +83,14 @@ class AuthController extends Controller
     /**
      * Cerrar sesión
      */
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
+        /** @var User|null $user */
         $user = $request->user();
+
         if ($user) {
             AuditLogger::log('LOGOUT', 'info', "Usuario {$user->email} cerró sesión.");
+            // @phpstan-ignore-next-line
             $user->currentAccessToken()->delete();
         }
 
@@ -98,13 +103,15 @@ class AuthController extends Controller
     /**
      * Obtener usuario autenticado
      */
-    public function user(Request $request)
+    public function user(Request $request): JsonResponse
     {
+        /** @var User $user */
         $user = $request->user();
+
         $roles = $user->roles->pluck('nombre');
         $permisos = $user->roles->flatMap(function ($rol) {
             return $rol->permisos;
-        })->pluck('slug')->unique();
+        })->pluck('slug')->unique()->values();
 
         return response()->json([
             'success' => true,
