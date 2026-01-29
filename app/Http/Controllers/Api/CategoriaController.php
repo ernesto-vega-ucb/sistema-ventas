@@ -25,7 +25,7 @@ class CategoriaController extends Controller
                 $search = $request->input('search');
                 $query->where(function ($q) use ($search) {
                     $q->where('nombre', 'ilike', "%{$search}%")
-                      ->orWhere('descripcion', 'ilike', "%{$search}%");
+                        ->orWhere('descripcion', 'ilike', "%{$search}%");
                 });
             }
 
@@ -44,6 +44,7 @@ class CategoriaController extends Controller
 
         } catch (Exception $e) {
             AuditLogger::error('Error al obtener categorías', $e);
+
             return response()->json(['success' => false, 'message' => 'Error', 'error' => $e->getMessage()], 500);
         }
     }
@@ -73,6 +74,7 @@ class CategoriaController extends Controller
             return response()->json(['success' => true, 'data' => $categoria], 201);
         } catch (Exception $e) {
             DB::rollBack();
+
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -80,16 +82,17 @@ class CategoriaController extends Controller
     public function show(mixed $id): JsonResponse
     {
         $categoria = Categoria::find($id);
-        if (!$categoria) {
+        if (! $categoria) {
             return response()->json(['success' => false, 'message' => 'No encontrada'], 404);
         }
+
         return response()->json(['success' => true, 'data' => $categoria]);
     }
 
     public function update(Request $request, mixed $id): JsonResponse
     {
         $categoria = Categoria::find($id);
-        if (!$categoria) {
+        if (! $categoria) {
             return response()->json(['success' => false, 'message' => 'No encontrada'], 404);
         }
 
@@ -104,11 +107,11 @@ class CategoriaController extends Controller
     public function toggleEstado(mixed $id): JsonResponse
     {
         $categoria = Categoria::find($id);
-        if (!$categoria) {
+        if (! $categoria) {
             return response()->json(['success' => false, 'message' => 'No encontrada'], 404);
         }
 
-        $nuevoEstado = !$categoria->estado;
+        $nuevoEstado = ! $categoria->estado;
         $categoria->update(['estado' => $nuevoEstado]);
 
         return response()->json(['success' => true, 'data' => $categoria]);
