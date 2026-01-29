@@ -44,14 +44,10 @@ class AuthController extends Controller
             AuditLogger::login("Usuario {$userEmail} inició sesión.");
 
             $roles = $user->roles()->pluck('nombre');
-            $permisos = $user->roles->flatMap(function ($rol) {
-                // Si $rol es un Model genérico para PHPStan, accedemos a la relación vía método
-                if ($rol instanceof \App\Models\Rol) {
-                    return $rol->permisos->pluck('slug');
-                }
-
-                return collect();
-            })->unique()->values();
+            $permisos = $roles->flatMap(function ($rol) {
+                $permisosRelacion = $rol->getAttribute('permisos');
+                return $permisosRelacion ? $permisosRelacion->pluck('slug') : collect();
+            })->unique()->values()->toArray();
 
             return response()->json([
                 'success' => true,

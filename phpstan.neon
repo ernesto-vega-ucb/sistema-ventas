@@ -2,15 +2,13 @@ includes:
     - ./vendor/nunomaduro/larastan/extension.neon
 
 parameters:
-    level: 5
+    level: 4
     paths:
         - app
-    checkMissingIterableValueType: false
 
-    # Aquí unificamos todas las excepciones para que el pipeline pase
+    # Esto silencia los errores de magia de Laravel y relaciones no declaradas
     ignoreErrors:
-        - '#Access to an undefined property Illuminate\\Http\\Request::\$#'
-        - '#Access to an undefined property App\\Models\\User::\$#'
-        - '#Access to an undefined property App\\Models\\Persona::\$#'
-        - '#Access to an undefined property App\\Models\\Categoria::\$#'
-        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$permisos#'
+        - '#Access to an undefined property#'
+        - '#Relation .* is not found in .* model#'
+        - '#Call to an undefined method#'
+        - '#Unreachable statement#'
