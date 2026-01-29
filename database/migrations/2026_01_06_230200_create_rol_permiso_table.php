@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Schema;
  *
  * @created 2026-01-06
  */
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('rol_permiso', function (Blueprint $table) {

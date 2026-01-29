@@ -91,7 +91,7 @@ class PermisosSeeder extends Seeder
             $permisosIds[] = $p->id;
         }
 
-        $this->command->info('✓ Se crearon/actualizaron ' . count($permisos) . ' permisos');
+        $this->command->info('✓ Se crearon/actualizaron '.count($permisos).' permisos');
 
         // Crear rol Administrador con todos los permisos
         $rolAdmin = Rol::updateOrCreate(
@@ -99,7 +99,7 @@ class PermisosSeeder extends Seeder
             [
                 'nombre' => 'Administrador',
                 'descripcion' => 'Rol con acceso completo a todas las funciones del sistema',
-                'estado' => true
+                'estado' => true,
             ]
         );
 
@@ -112,7 +112,7 @@ class PermisosSeeder extends Seeder
             [
                 'nombre' => 'Vendedor',
                 'descripcion' => 'Rol con permisos de ventas y consulta de productos/clientes',
-                'estado' => true
+                'estado' => true,
             ]
         );
 
@@ -137,7 +137,7 @@ class PermisosSeeder extends Seeder
             [
                 'nombre' => 'Almacenero',
                 'descripcion' => 'Rol con permisos de gestión de inventario y compras',
-                'estado' => true
+                'estado' => true,
             ]
         );
 

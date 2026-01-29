@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migración para hacer nullable la columna 'nombres' en tabla personas
- * 
+ *
  * Razón: Para proveedores/clientes con tipo de documento RUC (empresas),
  * no se requiere nombres personales ya que usan razon_social.
  * Solo las personas naturales (DNI, CE, PASAPORTE) necesitan nombres.

@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Schema;
  *
  * @created 2026-01-05
  */
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Ejecuta la migración para crear la tabla personas
      */

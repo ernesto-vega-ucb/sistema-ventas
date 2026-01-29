@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Migración para crear la tabla 'proveedores'
@@ -19,7 +19,8 @@ use Illuminate\Support\Facades\DB;
  *
  * @created 2026-01-06
  */
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Ejecuta la migración para crear la tabla proveedores
      */

@@ -1,30 +1,22 @@
-name: CI
+name: CI Sistema Ventas
 
-on:
-  push:
-    branches: ["main", "master"]
-  pull_request:
-    branches: ["main", "master"]
+on: [push, pull_request]
 
 jobs:
-  laravel-tests:
+  backend-quality:
     runs-on: ubuntu-latest
-
     services:
-      # Si necesitas una base de datos real para tests, descomenta esto.
-      # Por defecto usaremos SQLite en memoria para rapidez.
-      # mysql:
-      #   image: mysql:8.0
-      #   env:
-      #     MYSQL_ROOT_PASSWORD: password
-      #     MYSQL_DATABASE: laravel
-      #   ports:
-      #     - 3306:3306
-      #   options: >-
-      #     --health-cmd="mysqladmin ping"
-      #     --health-interval=10s
-      #     --health-timeout=5s
-      #     --health-retries=3
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: testing
+          POSTGRES_PASSWORD: password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -32,46 +24,53 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
-          coverage: none
+          php-version: '8.2'
+          extensions: mbstring, bcmath, gd, pdo_pgsql
 
-      - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+      - name: Cache Composer
+        uses: actions/cache@v3
+        with:
+          path: ~/.composer/cache
+          key: php-${{ hashFiles('**/composer.lock') }}
 
-      - name: Install Composer Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      - name: Install Dependencies
+        run: composer install --frozen-lockfile
 
-      - name: Generate Key
-        run: php artisan key:generate
+      - name: Run Pint (Lint)
+        run: ./vendor/bin/pint --test
 
-      - name: Directory Permissions
-        run: chmod -R 777 storage bootstrap/cache
+      - name: Static Analysis (PHPStan)
+        run: ./vendor/bin/phpstan analyse
 
-      - name: Create Database
-        run: |
-          mkdir -p database
-          touch database/database.sqlite
-
-      - name: Execute Tests (Unit/Feature)
+      - name: Run Backend Tests
         env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/database.sqlite
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: testing
+          DB_USERNAME: postgres
+          DB_PASSWORD: password
         run: php artisan test
 
-  frontend-build:
+  frontend-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: 20
+          cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Assets
+      - name: Lint Frontend
+        run: npm run lint
+
+      - name: Unit Tests Frontend
+        run: npm run test
+
+      - name: Build Frontend
         run: npm run build

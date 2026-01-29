@@ -36,11 +36,11 @@ class SecurityHeadersMiddleware
 
         // Content Security Policy (CSP)
         // Permite Vue, Vite (HMR), Google Fonts/FontAwesome (si se usan), e imágenes blob.
-        $csp = "default-src 'self'; " .
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173 http://127.0.0.1:5173; " .
-            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com http://localhost:5173 http://127.0.0.1:5173; " .
-            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " .
-            "img-src 'self' data: blob:; " .
+        $csp = "default-src 'self'; ".
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173 http://127.0.0.1:5173; ".
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com http://localhost:5173 http://127.0.0.1:5173; ".
+            "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; ".
+            "img-src 'self' data: blob:; ".
             "connect-src 'self' ws: wss: http://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173 http://cdn.datatables.net https://cdn.datatables.net;";
 
         $response->headers->set('Content-Security-Policy', $csp);
