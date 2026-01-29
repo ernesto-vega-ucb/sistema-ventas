@@ -12,57 +12,50 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    /**
-     * Iniciar sesión
-     */
     public function login(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $credentials = $request->only('email', 'password');
+
+        $validator = Validator::make($credentials, [
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de validación',
-                'errors' => $validator->errors(),
-            ], 422);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
-
-        $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
             /** @var User $user */
             $user = Auth::user();
 
-            if (! $user->estado) {
+            if (! $user->getAttribute('estado')) {
                 Auth::logout();
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Su cuenta está inactiva. Contacte al administrador.',
-                ], 403);
+                return response()->json(['success' => false, 'message' => 'Cuenta inactiva'], 403);
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            AuditLogger::login("Usuario {$user->email} inició sesión exitosamente.");
+            $userEmail = $user->getAttribute('email');
+            $userName = $user->getAttribute('name');
+            $userId = $user->getAttribute('id');
 
-            $roles = $user->roles->pluck('nombre');
-            $permisos = $user->roles->flatMap(function ($rol) {
+            AuditLogger::login("Usuario {$userEmail} inició sesión.");
+
+            $roles = $user->roles()->pluck('nombre');
+            $permisos = $user->roles()->with('permisos')->get()->flatMap(function ($rol) {
                 return $rol->permisos;
             })->pluck('slug')->unique()->values();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Login exitoso',
                 'data' => [
                     'token' => $token,
                     'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
+                        'id' => $userId,
+                        'name' => $userName,
+                        'email' => $userEmail,
                         'roles' => $roles,
                         'permisos' => $permisos,
                     ],
@@ -70,56 +63,36 @@ class AuthController extends Controller
             ]);
         }
 
-        $email = $request->input('email');
-        AuditLogger::log('LOGIN_FALLIDO', 'warning', "Intento de login fallido para email: {$email}");
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Credenciales incorrectas',
-        ], 401);
+        return response()->json(['success' => false, 'message' => 'Credenciales incorrectas'], 401);
     }
 
-    /**
-     * Cerrar sesión
-     */
     public function logout(Request $request): JsonResponse
     {
         /** @var User|null $user */
         $user = $request->user();
 
         if ($user) {
-            AuditLogger::log('LOGOUT', 'info', "Usuario {$user->email} cerró sesión.");
-            // @phpstan-ignore-next-line
-            $user->currentAccessToken()->delete();
+            $email = $user->getAttribute('email');
+            AuditLogger::log('LOGOUT', 'info', "Usuario {$email} cerró sesión.");
+            $user->tokens()->delete(); // Más limpio para PHPStan
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Sesión cerrada correctamente',
-        ]);
+        return response()->json(['success' => true]);
     }
 
-    /**
-     * Obtener usuario autenticado
-     */
     public function user(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
-        $roles = $user->roles->pluck('nombre');
-        $permisos = $user->roles->flatMap(function ($rol) {
-            return $rol->permisos;
-        })->pluck('slug')->unique()->values();
-
         return response()->json([
             'success' => true,
             'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'roles' => $roles,
-                'permisos' => $permisos,
+                'id' => $user->getAttribute('id'),
+                'name' => $user->getAttribute('name'),
+                'email' => $user->getAttribute('email'),
+                'roles' => $user->roles()->pluck('nombre'),
+                'permisos' => $user->roles()->with('permisos')->get()->flatMap(fn ($r) => $r->permisos)->pluck('slug')->unique()->values(),
             ],
         ]);
     }

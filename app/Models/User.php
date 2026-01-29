@@ -10,9 +10,11 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * Modelo User
- *
- * Usuario del sistema con soporte para roles y permisos.
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property bool $estado
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Rol[] $roles
  */
 class User extends Authenticatable
 {
