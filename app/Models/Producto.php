@@ -38,7 +38,7 @@ class Producto extends Model
     protected $appends = ['margen_utilidad', 'tiene_stock_bajo'];
 
     // Relación con categoría
-    public function categoria()
+    public function categoria(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Categoria::class);
     }

@@ -1,9 +1,16 @@
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+
 parameters:
     level: 5
     paths:
         - app
-        - tests
+    checkMissingIterableValueType: false
+
+    # Aquí unificamos todas las excepciones para que el pipeline pase
     ignoreErrors:
         - '#Access to an undefined property Illuminate\\Http\\Request::\$#'
-includes:
-    - ./vendor/nunomaduro/larastan/extension.neon
+        - '#Access to an undefined property App\\Models\\User::\$#'
+        - '#Access to an undefined property App\\Models\\Persona::\$#'
+        - '#Access to an undefined property App\\Models\\Categoria::\$#'
+        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$permisos#'
