@@ -5,6 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @method static \Illuminate\Database\Eloquent\Builder query()
+ * @method static \App\Models\Categoria create(array $attributes = [])
+ * @method static \App\Models\Categoria|null find($id)
+ * @property int $id
+ * @property string $nombre
+ * @property string|null $descripcion
+ * @property bool $estado
+ */
 class Categoria extends Model
 {
     use HasFactory;

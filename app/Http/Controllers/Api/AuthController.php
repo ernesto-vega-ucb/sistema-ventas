@@ -45,6 +45,7 @@ class AuthController extends Controller
 
             $roles = $user->roles()->pluck('nombre');
             $permisos = $user->roles()->with('permisos')->get()->flatMap(function ($rol) {
+                /** @var \App\Models\Rol $rol */
                 return $rol->permisos;
             })->pluck('slug')->unique()->values();
 
