@@ -33,8 +33,11 @@ jobs:
           path: ~/.composer/cache
           key: php-${{ hashFiles('**/composer.lock') }}
 
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
       - name: Install Dependencies
-        run: composer install --frozen-lockfile
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Run Pint (Lint)
         run: ./vendor/bin/pint --test
