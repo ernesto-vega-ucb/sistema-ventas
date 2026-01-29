@@ -29,7 +29,7 @@ class AuthController extends Controller
             /** @var User $user */
             $user = Auth::user();
 
-            if (! $user->getAttribute('estado')) {
+            if (!$user->getAttribute('estado')) {
                 Auth::logout();
 
                 return response()->json(['success' => false, 'message' => 'Cuenta inactiva'], 403);
