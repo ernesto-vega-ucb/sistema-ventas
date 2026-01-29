@@ -4,12 +4,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\AuditLogger;
 use App\Models\User;
+use App\Services\AuditLogger;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
@@ -37,7 +37,7 @@ class AuthController extends Controller
             /** @var User $user */
             $user = Auth::user();
 
-            if (!$user->estado) {
+            if (! $user->estado) {
                 Auth::logout();
 
                 return response()->json([
