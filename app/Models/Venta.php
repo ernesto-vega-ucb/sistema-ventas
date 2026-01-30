@@ -312,6 +312,7 @@ class Venta extends Model
         }
 
         $dias = now()->diffInDays($this->fecha_vencimiento, false);
+
         return (int) $dias;
     }
 }
