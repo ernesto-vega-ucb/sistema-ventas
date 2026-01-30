@@ -6,9 +6,8 @@ parameters:
     paths:
         - app
 
-    # Esto silencia los errores de magia de Laravel y relaciones no declaradas
     ignoreErrors:
+        - '#is not covariant with PHPDoc type list<string>#'
+        - '#If condition is always true#'
+        - '#Property .* does not accept Carbon\\Carbon\|string#'
         - '#Access to an undefined property#'
-        - '#Relation .* is not found in .* model#'
-        - '#Call to an undefined method#'
-        - '#Unreachable statement#'

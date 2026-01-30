@@ -59,7 +59,7 @@ class Compra extends Model
     /**
      * Atributos asignables en masa
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $fillable = [
         'proveedor_id',
@@ -104,7 +104,7 @@ class Compra extends Model
     /**
      * Atributos computados agregados a JSON/array
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $appends = [
         'cantidad_items',
@@ -405,7 +405,8 @@ class Compra extends Model
         if (! $this->es_credito || ! $this->fecha_vencimiento) {
             return null;
         }
+        $dias = now()->diffInDays($this->fecha_vencimiento, false);
 
-        return now()->diffInDays($this->fecha_vencimiento, false);
+        return (int) $dias;
     }
 }

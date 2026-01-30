@@ -40,7 +40,7 @@ class DetalleCompra extends Model
     /**
      * Atributos asignables en masa
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $fillable = [
         'compra_id',
@@ -70,7 +70,7 @@ class DetalleCompra extends Model
     /**
      * Atributos computados agregados a JSON/array
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $appends = [
         'precio_base',

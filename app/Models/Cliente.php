@@ -59,7 +59,7 @@ class Cliente extends Model
      * Define los campos que pueden ser llenados mediante asignación masiva
      * para protección contra vulnerabilidades de asignación masiva
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $fillable = [
         'persona_id',          // ID de la persona asociada
@@ -103,7 +103,7 @@ class Cliente extends Model
      * Estos accessors se incluyen automáticamente en JSON/array
      * NOTA: Puede afectar rendimiento en consultas masivas
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $appends = [
         'credito_disponible',          // Crédito disponible calculado
